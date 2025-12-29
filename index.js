@@ -28,6 +28,12 @@ client.on(Events.MessageCreate, async message => {
 
     if (message.author.bot) return;
 
+    // Check Channel Restrictions
+    const allowedChannels = process.env.ALLOWED_CHANNELS ? process.env.ALLOWED_CHANNELS.split(',') : [];
+    if (allowedChannels.length > 0 && !allowedChannels.includes(message.channel.id)) {
+        return;
+    }
+
     try {
         await message.channel.sendTyping();
 
