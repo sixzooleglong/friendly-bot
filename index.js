@@ -46,23 +46,34 @@ client.on(Events.MessageCreate, async message => {
         // 1. Direct Attachments (Uploads)
         if (message.attachments.size > 0) {
             const attachment = message.attachments.first();
-            // Basic check if it's an image
             if (attachment.contentType && attachment.contentType.startsWith('image/')) {
                 imageUrl = attachment.url;
             }
         }
 
-        // 2. Tenor / Giphy Links ( pasted GIFs )
-        // Only simple extraction: if the message contains a tenor/giphy link, we try to use it.
-        // Groq needs a Direct Image URL usually, but let's try passing the link. 
-        // Note: For Tenor, this often requires an API to get the raw GIF, but let's try the raw string first 
-        // or rely on Discord's embed if we could read it (bot can't always read embeds easily).
-        // A robust way for GIFs is tricky without an API key, but we will pass the string if it looks like an image URL.
+        // 2. Tenor / Giphy Links (Smart Extraction)
+        if (!imageUrl && message.content.match(/^https?:\/\/.*$/)) {
+            const url = message.content;
 
-        if (!imageUrl && (message.content.match(/\.(jpeg|jpg|gif|png)$/i) || message.content.includes("tenor.com"))) {
-            // If it's a direct link to an image/gif
-            if (message.content.match(/^https?:\/\/.*$/)) {
-                imageUrl = message.content;
+            // Basic Image Link (ends in extension)
+            if (url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+                imageUrl = url;
+            }
+            // Tenor / Giphy Page - Need to extract the direct image source
+            else if (url.includes("tenor.com") || url.includes("giphy.com")) {
+                try {
+                    // Quick fetch to get the metadata image
+                    const response = await fetch(url);
+                    const html = await response.text();
+
+                    // Look for OpenGraph image tag
+                    const match = html.match(/<meta property="og:image" content="([^"]+)"/);
+                    if (match && match[1]) {
+                        imageUrl = match[1];
+                    }
+                } catch (err) {
+                    console.log("Error extracting GIF URL:", err);
+                }
             }
         }
 
