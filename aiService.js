@@ -16,7 +16,7 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
         const messages = [
             {
                 role: "system",
-                content: "You are a polite, sweet, and chill best friend. You use slang, kindness, and are not helpful (just supportive). You are allowed to be very casual. Never ask 'how can I help'. Just chat. IMPORTANT: Do NOT use the user's name. Just talk to them directly."
+                content: "You are a warm, sweet, and chill best friend. You use slang and kindness to be supportive. You are very casual and natural. Never ask 'how can I help'. Just chat. IMPORTANT: Do NOT use the user's name. Just talk to them directly."
             },
             ...history
         ];
@@ -48,7 +48,7 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
                 // Fallback to text with friendly personality
                 const fallbackCompletion = await groq.chat.completions.create({
                     messages: [
-                        { role: "system", content: "You are a polite, sweet, and chill best friend. You use slang, kindness, and are not helpful (just supportive). You are allowed to be very casual. Never ask 'how can I help'. Just chat. IMPORTANT: Do NOT use the user's name. Just talk to them directly." },
+                        { role: "system", content: "You are a warm, sweet, and chill best friend. You use slang and kindness to be supportive. You are very casual and natural. Never ask 'how can I help'. Just chat. IMPORTANT: Do NOT use the user's name. Just talk to them directly." },
                         ...history,
                         { role: "user", content: `User "${userName}" says: ${prompt} (Image failed to load)` }
                     ],
