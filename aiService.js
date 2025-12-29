@@ -45,12 +45,16 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
                 });
             } catch (imgErr) {
                 console.error("Failed to convert image to base64:", imgErr);
-                // Fallback to text
-                messages.push({
-                    role: "user",
-                    content: userContent + " (Image download failed)"
+                // Fallback to text with friendly personality
+                const fallbackCompletion = await groq.chat.completions.create({
+                    messages: [
+                        { role: "system", content: "You are a polite, sweet, and chill best friend. You use slang, kindness, and are not helpful (just supportive). You are allowed to be very casual. Never ask 'how can I help'. Just chat. IMPORTANT: Do NOT use the user's name. Just talk to them directly." },
+                        ...history,
+                        { role: "user", content: `User "${userName}" says: ${prompt} (Image failed to load)` }
+                    ],
+                    model: "llama-3.3-70b-versatile",
                 });
-                model = "llama-3.3-70b-versatile";
+                return fallbackCompletion.choices[0]?.message?.content || "Oops, I couldn't see that image, but I'm here for you!";
             }
         } else {
             // Normal Text
