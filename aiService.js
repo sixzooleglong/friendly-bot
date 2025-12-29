@@ -77,4 +77,3 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
 }
 
 module.exports = { generateReply };
-```
