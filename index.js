@@ -40,8 +40,34 @@ client.on(Events.MessageCreate, async message => {
         const userId = message.author.id;
         if (!userHistory[userId]) userHistory[userId] = [];
 
-        // Generate reply with history
-        const reply = await generateReply(message.content, message.author.username, userHistory[userId]);
+        // Check for Images or GIFs
+        let imageUrl = null;
+
+        // 1. Direct Attachments (Uploads)
+        if (message.attachments.size > 0) {
+            const attachment = message.attachments.first();
+            // Basic check if it's an image
+            if (attachment.contentType && attachment.contentType.startsWith('image/')) {
+                imageUrl = attachment.url;
+            }
+        }
+
+        // 2. Tenor / Giphy Links ( pasted GIFs )
+        // Only simple extraction: if the message contains a tenor/giphy link, we try to use it.
+        // Groq needs a Direct Image URL usually, but let's try passing the link. 
+        // Note: For Tenor, this often requires an API to get the raw GIF, but let's try the raw string first 
+        // or rely on Discord's embed if we could read it (bot can't always read embeds easily).
+        // A robust way for GIFs is tricky without an API key, but we will pass the string if it looks like an image URL.
+
+        if (!imageUrl && (message.content.match(/\.(jpeg|jpg|gif|png)$/i) || message.content.includes("tenor.com"))) {
+            // If it's a direct link to an image/gif
+            if (message.content.match(/^https?:\/\/.*$/)) {
+                imageUrl = message.content;
+            }
+        }
+
+        // Generate reply with history AND image (if any)
+        const reply = await generateReply(message.content, message.author.username, userHistory[userId], imageUrl);
 
         // Update history (User msg + Bot reply)
         userHistory[userId].push({ role: "user", content: `User "${message.author.username}" says: ${message.content}` });
