@@ -25,14 +25,33 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
         if (imageUrl) {
             model = "meta-llama/llama-4-scout-17b-16e-instruct"; // Switch to Llama 4 Scout (Vision)
 
-            // Vision models require a slightly different message format
-            messages.push({
-                role: "user",
-                content: [
-                    { type: "text", text: userContent },
-                    { type: "image_url", image_url: { url: imageUrl } }
-                ]
-            });
+            try {
+                // OPTIMIZATION: Convert URL to Base64 to avoid Groq 404/Fetch errors
+                const imageResponse = await fetch(imageUrl);
+                if (!imageResponse.ok) throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+
+                const arrayBuffer = await imageResponse.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const base64Image = buffer.toString('base64');
+                const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
+                const dataUrl = `data:${mimeType};base64,${base64Image}`;
+
+                messages.push({
+                    role: "user",
+                    content: [
+                        { type: "text", text: userContent },
+                        { type: "image_url", image_url: { url: dataUrl } }
+                    ]
+                });
+            } catch (imgErr) {
+                console.error("Failed to convert image to base64:", imgErr);
+                // Fallback to text
+                messages.push({
+                    role: "user",
+                    content: userContent + " (Image download failed)"
+                });
+                model = "llama-3.3-70b-versatile";
+            }
         } else {
             // Normal Text
             messages.push({
@@ -49,8 +68,9 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
         return completion.choices[0]?.message?.content || "I apologize, I have no response at this moment.";
     } catch (error) {
         console.error("AI Error Details:", error);
-        return `⚠️ **Connection Issue:** ${error.message}\n\n*(Please check the console)*`;
+        return `⚠️ **Connection Issue:** ${error.message}`;
     }
 }
 
 module.exports = { generateReply };
+```
