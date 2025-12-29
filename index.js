@@ -29,7 +29,7 @@ client.on(Events.MessageCreate, async message => {
     if (message.author.bot) return;
 
     // Check Channel Restrictions
-    const allowedChannels = process.env.ALLOWED_CHANNELS ? process.env.ALLOWED_CHANNELS.split(',') : [];
+    const allowedChannels = process.env.ALLOWED_CHANNELS ? process.env.ALLOWED_CHANNELS.split(',').map(id => id.trim()) : [];
     if (allowedChannels.length > 0 && !allowedChannels.includes(message.channel.id)) {
         return;
     }
