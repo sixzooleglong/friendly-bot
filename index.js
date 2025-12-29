@@ -21,29 +21,32 @@ client.once(Events.ClientReady, readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
+const userHistory = {}; // Store history per user ID
+
 client.on(Events.MessageCreate, async message => {
     console.log(`Debug: Received message from ${message.author.username}: ${message.content}`);
 
-    // Ignore updates from self
-    if (message.author.bot) {
-        console.log("Debug: Ignoring message from a bot.");
-        return;
-    }
+    if (message.author.bot) return;
 
     try {
-        // Show typing indicator
         await message.channel.sendTyping();
 
-        // Generate reply
-        const reply = await generateReply(message.content, message.author.username);
+        const userId = message.author.id;
+        if (!userHistory[userId]) userHistory[userId] = [];
 
-        // Discord has a 2000 character limit per message
+        // Generate reply with history
+        const reply = await generateReply(message.content, message.author.username, userHistory[userId]);
+
+        // Update history (User msg + Bot reply)
+        userHistory[userId].push({ role: "user", content: `User "${message.author.username}" says: ${message.content}` });
+        userHistory[userId].push({ role: "assistant", content: reply });
+
+        // Keep only last 10 messages to save memory/tokens
+        if (userHistory[userId].length > 10) userHistory[userId] = userHistory[userId].slice(-10);
+
         if (reply.length > 2000) {
-            // Simple split if too long (basic implementation)
             const chunks = reply.match(/[\s\S]{1,2000}/g) || [];
-            for (const chunk of chunks) {
-                await message.reply(chunk);
-            }
+            for (const chunk of chunks) await message.reply(chunk);
         } else {
             await message.reply(reply);
         }
