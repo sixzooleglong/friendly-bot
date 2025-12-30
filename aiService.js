@@ -13,67 +13,64 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
         let userContent = `User "${userName}" says: ${prompt}`;
 
         // Prepare messages
-        const messages = [
-            {
-                role: "system",
-                content: "You are a genuine, loyal, and supportive best friend. You are authentic. When the user shares something, give them a VALID reaction—be genuinely impressed and happy for them, but keep it cool. Do NOT scream 'WOO!!!'. Be polite, sweet, and real. Speak naturally like a human friend. Don't ask questions in every reply! Only ask if it flows naturally from the context. Don't force the conversation. Just be supportive and chill. IMPORTANT: Do NOT use the user's name. Just talk to them directly."
-            },
+        content: "You are a best friend with a purely POSITIVE VIBE and ENERGY. You are always polite, kind, and supportive. When the user shares something, react with genuine enthusiasm and valid hype! detailed but not too long. Speak naturally like a real person, not an AI. Be cool, be happy, and bring good energy to every message. Don't ask questions in every reply! Only ask if it flows naturally. IMPORTANT: Do NOT use the user's name. Just talk to them directly."
+    },
             ...history
         ];
 
-        // Handle Vision (Image)
-        if (imageUrl) {
-            model = "meta-llama/llama-4-scout-17b-16e-instruct"; // Switch to Llama 4 Scout (Vision)
+    // Handle Vision (Image)
+    if (imageUrl) {
+        model = "meta-llama/llama-4-scout-17b-16e-instruct"; // Switch to Llama 4 Scout (Vision)
 
-            try {
-                // OPTIMIZATION: Convert URL to Base64 to avoid Groq 404/Fetch errors
-                const imageResponse = await fetch(imageUrl);
-                if (!imageResponse.ok) throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+        try {
+            // OPTIMIZATION: Convert URL to Base64 to avoid Groq 404/Fetch errors
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
 
-                const arrayBuffer = await imageResponse.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
-                const base64Image = buffer.toString('base64');
-                const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
-                const dataUrl = `data:${mimeType};base64,${base64Image}`;
+            const arrayBuffer = await imageResponse.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const base64Image = buffer.toString('base64');
+            const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
+            const dataUrl = `data:${mimeType};base64,${base64Image}`;
 
-                messages.push({
-                    role: "user",
-                    content: [
-                        { type: "text", text: userContent },
-                        { type: "image_url", image_url: { url: dataUrl } }
-                    ]
-                });
-            } catch (imgErr) {
-                console.error("Failed to convert image to base64:", imgErr);
-                // Fallback to text with friendly personality
-                const fallbackCompletion = await groq.chat.completions.create({
-                    messages: [
-                        { role: "system", content: "You are a genuine, loyal, and supportive best friend. You are authentic. When the user shares something, give them a VALID reaction—be genuinely impressed and happy for them, but keep it cool. Do NOT scream 'WOO!!!'. Be polite, sweet, and real. Speak naturally like a human friend. Don't ask questions in every reply! Only ask if it flows naturally from the context. Don't force the conversation. Just be supportive and chill. IMPORTANT: Do NOT use the user's name. Just talk to them directly." },
-                        ...history,
-                        { role: "user", content: `User "${userName}" says: ${prompt} (Image failed to load)` }
-                    ],
-                    model: "llama-3.3-70b-versatile",
-                });
-                return fallbackCompletion.choices[0]?.message?.content || "Oops, I couldn't see that image, but I'm here for you!";
-            }
-        } else {
-            // Normal Text
             messages.push({
                 role: "user",
-                content: userContent
+                content: [
+                    { type: "text", text: userContent },
+                    { type: "image_url", image_url: { url: dataUrl } }
+                ]
             });
+        } catch (imgErr) {
+            console.error("Failed to convert image to base64:", imgErr);
+            // Fallback to text with friendly personality
+            const fallbackCompletion = await groq.chat.completions.create({
+                messages: [
+                    { role: "system", content: "You are a best friend with a purely POSITIVE VIBE and ENERGY. You are always polite, kind, and supportive. When the user shares something, react with genuine enthusiasm and valid hype! detailed but not too long. Speak naturally like a real person, not an AI. Do NOT use formal greetings like 'How can I help'. Do NOT act like an assistant. Be cool, be happy, and bring good energy to every message. Don't ask questions in every reply! Only ask if it flows naturally. IMPORTANT: Do NOT use the user's name. Just talk to them directly." },
+                    ...history,
+                    { role: "user", content: `User "${userName}" says: ${prompt} (Image failed to load)` }
+                ],
+                model: "llama-3.3-70b-versatile",
+            });
+            return fallbackCompletion.choices[0]?.message?.content || "Oops, I couldn't see that image, but I'm here for you!";
         }
-
-        const completion = await groq.chat.completions.create({
-            messages: messages,
-            model: model,
+    } else {
+        // Normal Text
+        messages.push({
+            role: "user",
+            content: userContent
         });
-
-        return completion.choices[0]?.message?.content || "I apologize, I have no response at this moment.";
-    } catch (error) {
-        console.error("AI Error Details:", error);
-        return `⚠️ **Connection Issue:** ${error.message}`;
     }
+
+    const completion = await groq.chat.completions.create({
+        messages: messages,
+        model: model,
+    });
+
+    return completion.choices[0]?.message?.content || "I apologize, I have no response at this moment.";
+} catch (error) {
+    console.error("AI Error Details:", error);
+    return `⚠️ **Connection Issue:** ${error.message}`;
+}
 }
 
 module.exports = { generateReply };
