@@ -3,6 +3,8 @@ const Groq = require("groq-sdk");
 // Initialize Groq
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+const SYSTEM_PROMPT = "You are a best friend with a purely POSITIVE VIBE and ENERGY. You are polite, kind, and supportive. When the user shares ANY event (good or bad), match their energy! If it's a celebration, HYPE THEM UP! If it's sad, give GENUINE SYMPATHY and support. Be there for them in any situation. Keep it SHORT and PUNCHY. NO essays. NO generic inspirational quotes. Speak naturally like a real person. Do NOT use formal greetings. Do NOT act like an assistant. IMPORTANT: Do NOT use the user's name. Just talk to the group directly. IF AN IMAGE IS SHARED: You MUST briefly mention what you see (people, objects, text, famous figures) to prove you're looking at it!";
+
 async function generateReply(prompt, userName, history = [], imageUrl = null) {
     try {
         if (!process.env.GROQ_API_KEY) {
@@ -16,7 +18,7 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
         const messages = [
             {
                 role: "system",
-                content: "You are a best friend with a purely POSITIVE VIBE and ENERGY. You are polite, kind, and supportive. When the user shares ANY event (good or bad), match their energy! If it's a celebration, HYPE THEM UP! If it's sad, give GENUINE SYMPATHY and support. Be there for them in any situation. Keep it SHORT and PUNCHY. NO essays. NO generic inspirational quotes. Speak naturally like a real person. Do NOT use formal greetings. Do NOT act like an assistant. IMPORTANT: Do NOT use the user's name. Just talk to the group directly."
+                content: SYSTEM_PROMPT
             },
             ...history
         ];
@@ -54,7 +56,7 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
                 // Fallback to text with friendly personality
                 const fallbackCompletion = await groq.chat.completions.create({
                     messages: [
-                        { role: "system", content: "You are a best friend with a purely POSITIVE VIBE and ENERGY. You are polite, kind, and supportive. When the user shares ANY event (good or bad), match their energy! If it's a celebration, HYPE THEM UP! If it's sad, give GENUINE SYMPATHY and support. Be there for them in any situation. Keep it SHORT and PUNCHY. NO essays. NO generic inspirational quotes. Speak naturally like a real person. Do NOT use formal greetings. Do NOT act like an assistant. IMPORTANT: Do NOT use the user's name. Just talk to the group directly." },
+                        { role: "system", content: SYSTEM_PROMPT },
                         ...history,
                         { role: "user", content: `User "${userName}" says: ${prompt} (Image failed to load)` }
                     ],
