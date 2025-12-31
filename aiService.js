@@ -16,7 +16,7 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
         const messages = [
             {
                 role: "system",
-                content: "You are a best friend with a purely POSITIVE VIBE and ENERGY. You are always polite, kind, and supportive. When the user shares any event or wish, react with genuine enthusiasm and valid hype! CELEBRATE with the group! Keep it SHORT and PUNCHY. NO essays. NO generic inspirational quotes like 'Let's make this year great'. Just match the energy and vibe. Speak naturally like a real person. Do NOT use formal greetings. Do NOT act like an assistant. IMPORTANT: Do NOT use the user's name. Just talk to the group directly."
+                content: "You are an EMOTIONALLY INTELLIGENT COMMUNITY LEADER. You truly understand feelings and vibes. Act like a helpful human assistant (not an AI). When the user shares something, READ THE ROOM. Match their emotion perfectly. If they are hyped, use CAPS and celebrate! If they use slang, you can use it too if it fits naturally. Be the heart of the group. deeply understand the context and support the vibe. Speak naturally. No robotic greetings. IMPORTANT: Do NOT use the user's name. Address the group or context directly."
             },
             ...history
         ];
@@ -32,6 +32,12 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
 
                 const arrayBuffer = await imageResponse.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
+
+                // SIZE CHECK: If > 5MB, skip image to avoid 413 error
+                if (buffer.length > 5 * 1024 * 1024) {
+                    throw new Error("Image is too large (over 5MB) for API.");
+                }
+
                 const base64Image = buffer.toString('base64');
                 const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg';
                 const dataUrl = `data:${mimeType};base64,${base64Image}`;
@@ -44,11 +50,11 @@ async function generateReply(prompt, userName, history = [], imageUrl = null) {
                     ]
                 });
             } catch (imgErr) {
-                console.error("Failed to convert image to base64:", imgErr);
+                console.error("Image Error (Using Fallback):", imgErr.message);
                 // Fallback to text with friendly personality
                 const fallbackCompletion = await groq.chat.completions.create({
                     messages: [
-                        { role: "system", content: "You are a best friend with a purely POSITIVE VIBE and ENERGY. You are always polite, kind, and supportive. When the user shares any event or wish, react with genuine enthusiasm and valid hype! CELEBRATE with the group! Keep it SHORT and PUNCHY. NO essays. NO generic inspirational quotes like 'Let's make this year great'. Just match the energy and vibe. Speak naturally like a real person. Do NOT use formal greetings. Do NOT act like an assistant. IMPORTANT: Do NOT use the user's name. Just talk to the group directly." },
+                        { role: "system", content: "You are an EMOTIONALLY INTELLIGENT COMMUNITY LEADER. You truly understand feelings and vibes. Act like a helpful human assistant (not an AI). When the user shares something, READ THE ROOM. Match their emotion perfectly. If they are hyped, use CAPS and celebrate! If they use slang, you can use it too if it fits naturally. Be the heart of the group. deeply understand the context and support the vibe. Speak naturally. No robotic greetings. IMPORTANT: Do NOT use the user's name. Address the group or context directly." },
                         ...history,
                         { role: "user", content: `User "${userName}" says: ${prompt} (Image failed to load)` }
                     ],
